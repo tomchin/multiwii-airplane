@@ -1444,7 +1444,37 @@ void loop () {
 
   rc = mul(rcCommand[YAW] , (2*conf.yawRate + 30))  >> 5;
 
-  error = rc - imu.gyroData[YAW];
+  #ifdef AIRPLANE
+    // in airplane the ideal use of the ruder is only for coordinate with the flight path
+    // in level flight is OK to use ruder for cross wind flight (although this increase the stall speed)
+    // in bank turning use the ruder to coordinate the turn and overcome the counter yaw
+    #ifdef TURN_ANTISLIDE_TRASHOLD
+      static int turnFlag=0;
+      if (abs(att.angle[ROLL]) > TURN_ANTISLIDE_TRASHOLD) {
+        if (!turnFlag){
+          errorGyroI_YAW = 0;
+          turnFlag = 1;
+        }
+        // use the accelometer as 'Turn Coordination Indicator' to correct the turn.
+        //error = rc - turnCoordination;
+        error = rc + imu.accSmooth[ROLL];
+      } else {
+        if (turnFlag){
+          errorGyroI_YAW = 0;
+          turnFlag = 0;
+        }
+        error = rc - imu.gyroData[YAW];
+      }
+    #else
+      // no yaw correction at all
+      //error = rc - (att.turnCoordination >> 1);
+      error = rc + imu.accSmooth[ROLL];
+    #endif // TURN_ANTISLIDE_TRASHOLD
+  #else
+    // not an airplane
+    error = rc - imu.gyroData[YAW];
+  #endif // AIRPLANE
+
   errorGyroI_YAW  += mul(error,conf.pid[YAW].I8);
   errorGyroI_YAW  = constrain(errorGyroI_YAW, 2-((int32_t)1<<28), -2+((int32_t)1<<28));
   if (abs(rc) > 50) errorGyroI_YAW = 0;

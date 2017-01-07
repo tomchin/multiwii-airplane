@@ -276,6 +276,8 @@
     
     //#define FLAPS                       // Traditional Flaps on SERVO3.
     //#define FLAPSPEED     3             // Make flaps move slowm Higher value is Higher Speed.
+    
+    #define TURN_ANTISLIDE_TRASHOLD 100   // more than 10 degree roll is considered as intended ailerons (banked) turn
 
   /***********************      Common for Heli & Airplane         ***********************/
 
