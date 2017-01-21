@@ -1456,8 +1456,7 @@ void loop () {
           turnFlag = 1;
         }
         // use the accelometer as 'Turn Coordination Indicator' to correct the turn.
-        //error = rc - turnCoordination;
-        error = rc + imu.accSmooth[ROLL];
+        error = rc + att.slipAngle;
       } else {
         if (turnFlag){
           errorGyroI_YAW = 0;
@@ -1467,8 +1466,7 @@ void loop () {
       }
     #else
       // no yaw correction at all
-      //error = rc - (att.turnCoordination >> 1);
-      error = rc + imu.accSmooth[ROLL];
+      error = rc + att.slipAngle;
     #endif // TURN_ANTISLIDE_TRASHOLD
   #else
     // not an airplane
