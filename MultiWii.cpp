@@ -1440,7 +1440,7 @@ void loop () {
 
   //YAW
   #define GYRO_P_MAX 300
-  #define GYRO_I_MAX 250
+  #define GYRO_I_MAX 200
 
   rc = mul(rcCommand[YAW] , (2*conf.yawRate + 30))  >> 5;
 
@@ -1448,6 +1448,7 @@ void loop () {
     // in airplane the ideal use of the ruder is only for coordinate with the flight path
     // in level flight is OK to use ruder for cross wind flight (although this increase the stall speed)
     // in bank turning use the ruder to coordinate the turn and overcome the counter yaw
+    // TODO - try to find  way to switch between slip and gyro, (errorGyroI_YAW = 0; looks bad)
     #ifdef TURN_ANTISLIDE_TRASHOLD
       static int turnFlag=0;
       if (abs(att.angle[ROLL]) > TURN_ANTISLIDE_TRASHOLD) {
@@ -1474,7 +1475,7 @@ void loop () {
   #endif // AIRPLANE
 
   errorGyroI_YAW  += mul(error,conf.pid[YAW].I8);
-  errorGyroI_YAW  = constrain(errorGyroI_YAW, 2-((int32_t)1<<28), -2+((int32_t)1<<28));
+  errorGyroI_YAW  = constrain(errorGyroI_YAW, 0-(((int32_t)GYRO_I_MAX)<<13),(((int32_t)GYRO_I_MAX)<<13));
   if (abs(rc) > 50) errorGyroI_YAW = 0;
   
   PTerm = mul(error,conf.pid[YAW].P8)>>6;
