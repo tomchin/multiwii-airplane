@@ -111,6 +111,9 @@ typedef struct {
 typedef struct {
   int16_t angle[2];            // absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
   int16_t heading;             // variometer in cm/s
+#  ifdef AIRPLANE
+  int16_t slipAngle;    // coordination angle in 0.1 degree limits: [-900 , +900]
+#  endif
 } att_t;
 
 typedef struct {

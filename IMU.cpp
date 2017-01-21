@@ -267,6 +267,12 @@ void getEstimatedAttitude(){
     throttleAngleCorrection = THROTTLE_ANGLE_CORRECTION * constrain(100 - cosZ, 0, 100) >>3;  // 16 bit ok: 200*150 = 30000  
   #endif
 
+#  ifdef AIRPLANE
+    // the turn coordination indication is actually the angle of the total acceleration around the roll axis
+    // range: [-90 , +90] degree, units: 0.1 deg
+    att.slipAngle = _atan2(imu.accSmooth[ROLL], abs(imu.accSmooth[YAW]));
+#  endif
+
   // projection of ACC vector to global Z, with 1G subtructed
   // Math: accZ = A * G / |G| - 1G
   accZ = accZ_tmp *  invG;
