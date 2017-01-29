@@ -9,7 +9,7 @@ Airplanes have different dynamics than copters.
 `att.slipAngle`was added to use as _slip angle indicator_ calculated from the accelerometer
 (https://en.wikipedia.org/wiki/Turn_and_slip_indicator)
 
-#### Fix the weird behavior of the rudder during banked turns
+### Fix the weird behavior of the rudder during banked turns
 Efficient flight will never use the rudder for flat turns,
 a good use of the rudder will be only for coordinate the flight path (mostly during banked turns).
 
