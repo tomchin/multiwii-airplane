@@ -1515,6 +1515,36 @@ inline void Sonar_init() {}
 void Sonar_update() {}
 #endif
 
+#if AIRSPEED
+  // TODO - replace float by uint
+  static float airpressureRaw;
+  static float airpressureOffset;
+
+  void Airspeed_update() {
+    float input = (float)analogRead(AIRSPEED_PIN);
+
+    airpressureRaw = (input * .1) + (airpressureRaw * .9); //Think about smoothing
+
+    if( (airpressureRaw - airpressureOffset) < 0) {
+      airspeed = 0;
+    } else {
+      airspeed = sqrt((float)(airpressureRaw - airpressureOffset) * AIRSPEED_FACTOR)*3.6; //m/s * 3.6 = km/h
+      //airspeed = sqrt((float)(airpressureRaw - airpressureOffset) * AIRSPEED_FACTOR)*100; // m/s * 100 = cm/s
+    }
+  }
+
+  void Airspeed_init() {
+    /* Reading airspeedRaw for some cycles/1s and storing as zero value */
+
+    airpressureRaw = (float)analogRead(AIRSPEED_PIN);
+
+    for(int airspeedI=0; airspeedI < 50; airspeedI++){
+      delay(20);
+      airpressureRaw = ((float)analogRead(AIRSPEED_PIN) * .3) + (airpressureRaw * .7); //Think about smoothing
+    }
+    airpressureOffset = airpressureRaw;
+  }
+#endif // AIRSPEED
 
 void initS() {
   i2c_init();
@@ -1523,6 +1553,9 @@ void initS() {
   if (MAG)   Mag_init();
   if (ACC)   ACC_init();
   if (SONAR) Sonar_init();
+  #ifdef AIRSPEED
+    if (AIRSPEED) Airspeed_init();
+  #endif
 }
 
 void initSensors() {

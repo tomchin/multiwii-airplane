@@ -429,6 +429,9 @@ void evaluateCommand(uint8_t c) {
       #if defined(FIXEDWING) || defined(HELICOPTER)
         if(f.PASSTHRU_MODE) tmp |= 1<<BOXPASSTHRU;
       #endif
+      #if defined(AIRSPEED) && defined(FIXEDWING)
+        if(f.AUTOTRHO_MODE) tmp |= 1<<BOXAUTOTHRO;
+      #endif
       #if defined(BUZZER)
         if(rcOptions[BOXBEEPERON]) tmp |= 1<<BOXBEEPERON;
       #endif

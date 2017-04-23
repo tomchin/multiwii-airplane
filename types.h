@@ -83,6 +83,9 @@ enum box {
     BOXGPSNAV,
     BOXLAND,
   #endif
+  #if defined(AIRSPEED) && defined(FIXEDWING)
+    BOXAUTOTHRO,
+  #endif
   CHECKBOXITEMS
 };
 
@@ -129,6 +132,9 @@ typedef struct {
 #endif
 #if defined(FIXEDWING) || defined(HELICOPTER)
   uint8_t PASSTHRU_MODE :1 ;
+#endif
+#if defined(AIRSPEED)
+  uint8_t AUTOTRHO_MODE :1 ;        // new mode auto throttle
 #endif
   uint8_t SMALL_ANGLES_25 :1 ;
 #if MAG

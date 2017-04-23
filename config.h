@@ -47,7 +47,7 @@
     //#define OCTOFLATX
     //#define FLYING_WING
     //#define VTAIL4
-    //#define AIRPLANE
+    #define AIRPLANE
     //#define SINGLECOPTER
     //#define DUALCOPTER
     //#define HELI_120_CCPM
@@ -156,7 +156,7 @@
       //#define RCNet_FC_GPS       // RCNet FC with MPU6050 + MS561101BA + HMC5883L + UBLOX GPS http://www.rcnet.com
       //#define FLYDU_ULTRA        // MEGA+10DOF+MT3339 FC
       //#define DIYFLYING_MAGE_V1  // diyflying 10DOF mega board with MPU6050 + HMC5883L + BMP085 http://www.indoor-flying.hk
-      //#define MultiWii_32U4_SE         // Hextronik MultiWii_32U4_SE
+      #define MultiWii_32U4_SE         // Hextronik MultiWii_32U4_SE
       //#define MultiWii_32U4_SE_no_baro // Hextronik MultiWii_32U4_SE without the MS561101BA to free flash-memory for other functions
       //#define Flyduino9DOF       // Flyduino 9DOF IMU MPU6050+HMC5883l
       //#define Nano_Plane         // Multiwii Plane version with tail-front LSM330 sensor http://www.radiosait.ru/en/page_5324.html
@@ -654,6 +654,32 @@ At this moment you can use this function only with WinGUI 2.3 release. MultiWiiC
     /* introduce a deadband around the stick center
        Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
     //#define DEADBAND 6
+
+
+  /********************************************************************/
+  /****                      airspeed sensor                       ****/
+  /********************************************************************/
+
+    /* Airspeed sensor will initialize in one second on bootup of controler.
+     * Take care not letting the wind blow into pitot tube!
+     */
+
+    #define AIRSPEED 1             // activate the airspeed code
+    #define AIRSPEED_PIN A1        // Analog PIN 1
+    #define AIRSPEED_FACTOR 11.96f // Calculation see bottom annotations
+
+    /* Background for calculation of AIRSPEED_FACTOR
+          v [m/s]= sqrt(2 * roh * delta-pressure[Pa])
+
+          1 increment (Analog read) = VCC/1024 = 5V/1024 = 0.0048828125 = 0.00488V = 4.88mV
+          Datasheet of MPXV7002: 1 = 1kPa -> 1mV = 1Pa
+          roh(@15 �C, 1bar air pressure) = 1,225 kg/m�
+
+          -> 1 increment = 4.88mV = 4.88Pa
+          -> v [m/s] = sqrt(2 * roh * delta-pressure[Pa]) = sqrt(2 * roh * 4.88 * AnalogReadIncrements)
+          AIRSPEED_FACTOR = 2 * roh * 4.88
+   */
+
 
   /**************************************************************************************/
   /***********************                  GPS                **************************/

@@ -97,6 +97,9 @@ const char boxnames[] PROGMEM = // names for dynamic generation of config GUI
   "MISSION;"
   "LAND;"
 #endif
+#if defined(AIRSPEED) && defined(FIXEDWING)
+  "AUTOTHRO;"
+#endif
   ;
 
 const uint8_t boxids[] PROGMEM = {// permanent IDs associated to boxes. This way, you can rely on an ID number to identify a BOX function.
@@ -152,6 +155,9 @@ const uint8_t boxids[] PROGMEM = {// permanent IDs associated to boxes. This way
   20, //"MISSION;"
   21, //"LAND;"
 #endif
+#if defined(AIRSPEED) && defined(FIXEDWING)
+  22, //"AUTOTHRO;"
+#endif
   };
 
 
@@ -168,6 +174,9 @@ int32_t  AltHold; // in cm
 int16_t  sonarAlt;
 int16_t  BaroPID = 0;
 int16_t  errorAltitudeI = 0;
+
+uint16_t airspeed = 0;  // the actual air speed in Km/h
+uint16_t airspeedHold = 0;  // speed to hold in Km/h
 
 // **************
 // gyro+acc IMU
@@ -1121,6 +1130,19 @@ void loop () {
     } else {
       f.MAG_MODE = 0;
     }
+    
+    #if AIRSPEED && defined(FIXEDWING)
+      if (rcOptions[BOXAUTOTHRO]) {
+        if (!f.AUTOTRHO_MODE) {
+          f.AUTOTRHO_MODE = 1;
+          airspeedHold = airspeed;
+          initialThrottleHold = rcCommand[THROTTLE];
+        }
+      } else {
+        f.AUTOTRHO_MODE = 0;
+      }
+    #endif
+
     #if defined(HEADFREE)
       if (rcOptions[BOXHEADFREE]) {
         if (!f.HEADFREE_MODE) {
@@ -1275,6 +1297,10 @@ void loop () {
         #ifdef VARIOMETER
           if (f.VARIO_MODE) vario_signaling();
         #endif
+        #if AIRSPEED
+		  Airspeed_update();
+		  //debug[3] = airspeed;
+	    #endif
         break;
     }
   }
@@ -1364,7 +1390,22 @@ void loop () {
   }
   #endif //BARO
 
-
+	#if defined(FIXEDWING) && AIRSPEED
+		static int16_t autoThro_I;
+		if (f.AUTOTRHO_MODE &&
+		    (rcCommand[THROTTLE] > 1200) ) {
+		  int16_t error = airspeedHold - airspeed;
+		  int16_t p = (error*conf.pid[PIDALT].P8 >> 3);
+		  autoThro_I += error*conf.pid[PIDALT].I8 >> 5;
+		  autoThro_I = constrain(autoThro_I, -24000, 24000);
+		  int16_t iTerm = autoThro_I>>7;
+		  
+		  rcCommand[THROTTLE] = constrain(rcCommand[THROTTLE] + p + iTerm, 1100, 1900);
+		} else {
+		  //airspeedHold = airspeed;
+		  autoThro_I = 0;
+		}
+	#endif // AIRSPEED
 
   #if defined(THROTTLE_ANGLE_CORRECTION)
   if(f.ANGLE_MODE || f.HORIZON_MODE) {

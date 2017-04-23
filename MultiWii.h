@@ -28,6 +28,7 @@ extern int32_t  AltHold;
 extern int16_t  sonarAlt;
 extern int16_t  BaroPID;
 extern int16_t  errorAltitudeI;
+extern uint16_t airspeed;
 
 extern int16_t  i2c_errors_count;
 extern uint8_t alarmArray[ALRM_FAC_SIZE];

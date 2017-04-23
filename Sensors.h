@@ -6,6 +6,7 @@ void Gyro_getADC ();
 uint8_t Mag_getADC();
 uint8_t Baro_update();
 void Sonar_update();
+void Airspeed_update();
 
 void initSensors();
 void i2c_rep_start(uint8_t address);
