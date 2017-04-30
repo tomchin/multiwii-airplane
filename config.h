@@ -905,6 +905,8 @@ Also note, that maqgnetic declination changes with time, so recheck your value e
     //#define RX_RSSI_PIN A3
     //#define RX_RSSI_CHAN 8   //RSSI injection on selected channel (for PPM, Olrs, SBUS, etc.) (Starts at 0)
 
+    #define FAILSAFE_RSSI      // fake the RSSI value from failsafe mechanism
+
   /********************************************************************/
   /****                             TELEMETRY                      ****/
   /********************************************************************/
@@ -1256,4 +1258,3 @@ Also note, that maqgnetic declination changes with time, so recheck your value e
 /*************************************************************************************************/
 
 #endif /* CONFIG_H_ */
-

@@ -279,6 +279,13 @@ uint16_t intPowerTrigger1;
 
 int16_t failsafeEvents = 0;
 volatile int16_t failsafeCnt = 0;
+// bitmask: failsafe_modes[BOX_mode] is 1 iff BOX_mode active at failsafe
+const uint32_t failsafe_modes =
+    1<<BOXANGLE |
+#if GPS
+    1<<BOXGPSHOME |
+#endif
+    1<<BOXMAG ;
 
 int16_t rcData[RC_CHANS];    // interval [1000;2000]
 int16_t rcSerial[8];         // interval [1000;2000] - is rcData coming from MSP
@@ -878,6 +885,10 @@ void loop () {
     computeRC();
     // Failsafe routine - added by MIS
     #if defined(FAILSAFE)
+      #if defined(FAILSAFE_RSSI) && !defined(RX_RSSI)
+        analog.rssi = max(0 , (5*FAILSAFE_DELAY) - failsafeCnt)*(1023/(5*FAILSAFE_DELAY));// range: [0;1023]
+        //debug[2] = analog.rssi;
+      #endif
       if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level
         for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
         rcData[THROTTLE] = conf.failsafe_throttle;
@@ -926,6 +937,7 @@ void loop () {
     if(rcDelayCommand == 20) {
       if(f.ARMED) {                   // actions during armed
         #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
+          // TODO - don't disarm if alt > 5m
           if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
         #endif
         #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
@@ -1055,12 +1067,15 @@ void loop () {
       auxState |= (rcData[AUX1+i]<1300)<<(3*i) | (1300<rcData[AUX1+i] && rcData[AUX1+i]<1700)<<(3*i+1) | (rcData[AUX1+i]>1700)<<(3*i+2);
     #endif
 
-    for(i=0;i<CHECKBOXITEMS;i++)
+    for(i=0;i<CHECKBOXITEMS;i++){
       rcOptions[i] = (auxState & conf.activate[i])>0;
+#if defined(FAILSAFE) // failsafe override checkbox
+        rcOptions[i] = BOX_ACTIVE(rcOptions[i]);
+#endif
+      }
 
-    // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAFE_DELAY is always false
     #if ACC
-      if ( rcOptions[BOXANGLE] || (failsafeCnt > 5*FAILSAFE_DELAY) ) { 
+      if ( rcOptions[BOXANGLE]) {
         // bumpless transfer to Level mode
         if (!f.ANGLE_MODE) {
           errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
@@ -1349,12 +1364,25 @@ void loop () {
   //Heading manipulation TODO: Do heading manipulation 
   #endif
 
+  #if GPS
+    if (IS_IN_FAILSAFE() && f.MAG_MODE &&
+        (!f.GPS_FIX || !f.GPS_FIX_HOME) ){
+      rcCommand[YAW] = 250; // TODO - circle mode
+    }
+  #else
+    if (IS_IN_FAILSAFE() && f.MAG_MODE) {
+      rcCommand[YAW] = 250; // TODO - circle mode
+    }
+  #endif
+
   if (abs(rcCommand[YAW]) <70 && f.MAG_MODE) {
     int16_t dif = att.heading - magHold;
     if (dif <= - 180) dif += 360;
     if (dif >= + 180) dif -= 360;
     if (f.SMALL_ANGLES_25 || (f.GPS_mode != 0)) rcCommand[YAW] -= dif*conf.pid[PIDMAG].P8 >> 5;  //Always correct maghold in GPS mode
-  } else magHold = att.heading;
+  } else {
+    magHold = att.heading;
+  }
 
   #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
   /* Smooth alt change routine , for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease 

@@ -66,6 +66,14 @@ extern int16_t servo[8];
 extern int16_t failsafeEvents;
 extern volatile int16_t failsafeCnt;
 
+#if defined(FAILSAFE)
+#  define IS_IN_FAILSAFE() (failsafeCnt > 5*FAILSAFE_DELAY)
+#else
+#  define IS_IN_FAILSAFE() false
+#endif
+#define IS_FAILSAFE_BOX(boxId) (failsafe_modes & (boxId))
+#define BOX_ACTIVE(boxId) (IS_IN_FAILSAFE() ? IS_FAILSAFE_BOX(boxId) : rcOptions[boxId])
+
 extern int16_t rcData[RC_CHANS];
 extern int16_t rcSerial[8];
 extern int16_t rcCommand[4];
