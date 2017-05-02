@@ -680,6 +680,7 @@ At this moment you can use this function only with WinGUI 2.3 release. MultiWiiC
           AIRSPEED_FACTOR = 2 * roh * 4.88
    */
 
+  #define AIRSPEED_INSTEAD_GPS_SPEED 1 // set to 1 make the speed reported by GPS be the airspeed
 
   /**************************************************************************************/
   /***********************                  GPS                **************************/

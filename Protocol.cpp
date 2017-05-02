@@ -393,6 +393,9 @@ void evaluateCommand(uint8_t c) {
       st.cycleTime        = cycleTime;
       st.i2c_errors_count = i2c_errors_count;
       st.sensor           = ACC|BARO<<1|MAG<<2|GPS<<3|SONAR<<4;
+      #if AIRSPEED && AIRSPEED_INSTEAD_GPS_SPEED
+        st.sensor |= 1<<3; // fake the GPS
+      #endif
       #if ACC
         if(f.ANGLE_MODE)   tmp |= 1<<BOXANGLE;
         if(f.HORIZON_MODE) tmp |= 1<<BOXHORIZON;
@@ -522,7 +525,11 @@ void evaluateCommand(uint8_t c) {
       msp_raw_gps.c     = GPS_coord[LAT];
       msp_raw_gps.d     = GPS_coord[LON];
       msp_raw_gps.e     = GPS_altitude;
-      msp_raw_gps.f     = GPS_speed;
+      #if AIRSPEED && AIRSPEED_INSTEAD_GPS_SPEED
+      msp_raw_gps.GPS_speed         = 27.78f * airspeed; // this is our airspeed (convert km/h to cm/s)
+      #else
+        msp_raw_gps.f     = GPS_speed;
+      #endif
       msp_raw_gps.g     = GPS_ground_course;
       s_struct((uint8_t*)&msp_raw_gps,16);
       break;
@@ -655,6 +662,30 @@ void evaluateCommand(uint8_t c) {
       }
       break;
     #endif //USE_MSP_WP
+    #else
+      #if AIRSPEED && AIRSPEED_INSTEAD_GPS_SPEED
+        // temporary solution - use gps speed to display airspeed
+        case MSP_RAW_GPS:
+          struct {
+            uint8_t  GPS_fix;
+            uint8_t  GPS_numSat;
+            int32_t  GPS_coord[2];
+            int16_t  GPS_altitude;
+            uint16_t GPS_speed;
+            int16_t  GPS_ground_course;
+            //uint8_t  GPS_Present;
+          } msp_raw_gps;
+          msp_raw_gps.GPS_fix           = 1; // GPS_FIX
+          msp_raw_gps.GPS_numSat        = 10; // GPS_numSat;
+          msp_raw_gps.GPS_coord[0]      = 0; // GPS_coord[LAT];
+          msp_raw_gps.GPS_coord[1]      = 0; // GPS_coord[LON];
+          msp_raw_gps.GPS_altitude      = 0; // GPS_altitude;
+          msp_raw_gps.GPS_speed         = 27.78f * airspeed; // this is our airspeed (convert km/h to cm/s)
+          msp_raw_gps.GPS_ground_course = 0; // GPS_ground_course;
+          //msp_raw_gps.GPS_Present       = 1;
+          s_struct((uint8_t*)&msp_raw_gps,16);
+          break;
+      #endif
     #endif //GPS
     case MSP_ATTITUDE:
       s_struct((uint8_t*)&att,6);
