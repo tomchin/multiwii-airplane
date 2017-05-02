@@ -1536,8 +1536,25 @@ void loop () {
       }
     #else
       // no yaw correction at all
-      error = rc + att.slipAngle;
+      error = rc + (att.slipAngle>>1);
     #endif // TURN_ANTISLIDE_TRASHOLD
+
+    /* clear integrators to smoothen things when exiting PASSTHRU mode */
+    if(f.PASSTHRU_MODE){
+      errorGyroI[ROLL] = 0;
+      errorGyroI[PITCH] = 0;
+      errorGyroI_YAW = 0;
+    } else {
+      /* Always add DTerm for fixed-wings */
+      static int16_t lastYawGyro = 0;
+      static int16_t deltaYawSmooth = 0;
+      delta = imu.gyroData[YAW] - lastYawGyro; // derivative approximation
+      deltaYawSmooth = deltaYawSmooth>>1 + delta>>1;
+      lastYawGyro = imu.gyroData[YAW];
+      DTerm = mul(deltaYawSmooth, conf.pid[YAW].D8) >> 6;
+      DTerm = constrain(DTerm, -150, 150);
+    }
+
   #else
     // not an airplane
     error = rc - imu.gyroData[YAW];
@@ -1553,9 +1570,13 @@ void loop () {
     PTerm = constrain(PTerm,-limit,+limit);
   #endif
   
-  ITerm = constrain((int16_t)(errorGyroI_YAW>>13),-GYRO_I_MAX,+GYRO_I_MAX);
+  ITerm = (errorGyroI_YAW>>13); // no need for constrain here
   
-  axisPID[YAW] =  PTerm + ITerm;
+  #if defined(AIRPLANE)
+    axisPID[YAW] =  constrain(PTerm + ITerm - DTerm, -500, 500);
+  #else
+    axisPID[YAW] =  PTerm + ITerm;
+  #endif
   
   #elif PID_CONTROLLER == 2 // alexK
   #define GYRO_I_MAX 256
