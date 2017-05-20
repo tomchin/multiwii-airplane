@@ -169,6 +169,15 @@ asm volatile ( \
 "r26" \
 )
 
+#define applyDeadband(value, deadband)  \
+  if(abs(value) < deadband) {           \
+    value = 0;                          \
+  } else if(value > 0){                 \
+    value -= deadband;                  \
+  } else if(value < 0){                 \
+    value += deadband;                  \
+  }
+
 int32_t  __attribute__ ((noinline)) mul(int16_t a, int16_t b) {
   int32_t r;
   MultiS16X16to32(r, a, b);
@@ -271,6 +280,7 @@ void getEstimatedAttitude(){
     // the turn coordination indication is actually the angle of the total acceleration around the roll axis
     // range: [-90 , +90] degree, units: 0.1 deg
     att.slipAngle = _atan2(imu.accSmooth[ROLL], abs(imu.accSmooth[YAW]));
+    applyDeadband(att.slipAngle, 10);
     att.slipAngle = constrain(att.slipAngle, -900, 900);
 #  endif
 
@@ -288,16 +298,6 @@ void getEstimatedAttitude(){
 #define BARO_TAB_SIZE   21
 
 #define ACC_Z_DEADBAND (ACC_1G>>5) // was 40 instead of 32 now
-
-
-#define applyDeadband(value, deadband)  \
-  if(abs(value) < deadband) {           \
-    value = 0;                          \
-  } else if(value > 0){                 \
-    value -= deadband;                  \
-  } else if(value < 0){                 \
-    value += deadband;                  \
-  }
 
 #if BARO
 uint8_t getEstimatedAltitude(){
@@ -345,9 +345,10 @@ uint8_t getEstimatedAltitude(){
     baroVel = constrain(baroVel, -300, 300); // constrain baro velocity +/- 300cm/s
     applyDeadband(baroVel, 10); // to reduce noise near zero
 
+#if !defined(FIXEDWING)
     // Integrator - velocity, cm/sec
     vel += accZ * ACC_VelScale * dTime;
-
+#endif // FIXEDWING
     // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity). 
     // By using CF it's possible to correct the drift of integrated accZ (velocity) without loosing the phase, i.e without delay
     vel = vel * 0.985f + baroVel * 0.015f;
